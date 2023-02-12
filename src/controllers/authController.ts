@@ -1,7 +1,11 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from 'express';
 import * as authService from '../service/authService';
-import { validateRegisterInput } from "../helpers/registerValidation";
-import { ApiError } from "../exceptions/apiError";
+import { validateRegisterInput } from '../helpers/registerValidation';
+import { ApiError } from '../exceptions/apiError';
+import { RequestWithUser } from '../middlewares/authMiddleware';
+import { UserRoles } from '../types/UserRoles';
+import User from "../models/User";
+import { UserToReturn } from '../types/UserToReturn';
 
 export const registration = async (req: Request, res: Response) => {
   const { isValid, errors } = validateRegisterInput(req.body);
@@ -10,13 +14,14 @@ export const registration = async (req: Request, res: Response) => {
     throw ApiError.BadRequest('Error in validating incoming data', errors);
   }
 
-  const { email, username, password, role } = req.body;
+  const { email, username, password, role, boss } = req.body;
 
   const userData = await authService.registration(
     email,
     username,
     password,
-    role
+    role,
+    boss
   );
 
   res.cookie('refresh-token', userData.refreshToken, {
@@ -27,11 +32,7 @@ export const registration = async (req: Request, res: Response) => {
   return res.json(userData);
 };
 
-export const activate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const activate = async (req: Request, res: Response,) => {
   const activationLink = req.params.link;
 
   await authService.activate(activationLink);
@@ -39,7 +40,7 @@ export const activate = async (
   return res.redirect( 'https://www.google.com/');
 };
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
+export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   const userData = await authService.login(email, password);
@@ -72,8 +73,10 @@ export const refresh = async (req: Request, res: Response) => {
   return res.json(userData);
 };
 
-export const getUsers = async (req: Request, res: Response) => {
-  const users = await authService.getAllUsers()
+export const getUsers = async (req: RequestWithUser, res: Response) => {
+  const currUser = req.user;
+
+  const users = await authService.getAllUsers(currUser);
 
   return res.json(users);
 };

@@ -20,6 +20,14 @@ const User = new Schema(
       default: 'USER',
       enum: ['USER', 'ADMIN', 'BOSS'],
     },
+    boss: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    subordinates: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+    },
     isActivated: {
       type: Boolean,
       default: false,

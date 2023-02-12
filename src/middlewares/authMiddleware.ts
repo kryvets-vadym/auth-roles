@@ -3,7 +3,7 @@ import { ApiError } from '../exceptions/apiError';
 import * as tokenService from '../service/tokenService';
 
 export interface RequestWithUser extends Request {
-  user?: {},
+  user?: any,
 }
 
 export function authMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {

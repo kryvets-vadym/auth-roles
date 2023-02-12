@@ -3,14 +3,17 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 }  from 'uuid';
 import * as mailService from './mailService';
 import * as tokenService from './tokenService';
-import { UserToReturn } from "../types/UserToReturn";
-import { ApiError } from "../exceptions/apiError";
+import { UserToReturn } from '../types/UserToReturn';
+import { ApiError } from '../exceptions/apiError';
+import { UserRoles } from '../types/UserRoles';
+import { Schema } from 'mongoose';
 
 export const registration = async (
   email: string,
   name: string,
   password: string,
-  role: any,
+  role: UserRoles,
+  boss: any,
 ) => {
   const candidate = await User.findOne({ email });
 
@@ -25,11 +28,15 @@ export const registration = async (
     username: name,
     email,
     password: hashedPassword,
-    activationLink
+    activationLink,
   });
 
   if (role) {
     user.role = role;
+  }
+
+  if (boss) {
+    user.boss = boss;
   }
 
   await user.save();
@@ -113,8 +120,32 @@ export const refresh = async (refreshToken: string) => {
   return { ...tokens, userDto};
 };
 
-export const getAllUsers = async () => {
-  const users = await User.find();
+export const getAllUsers = async (user: any) => {
+  const { role } = user;
 
-  return users;
+  switch (role) {
+    case UserRoles.Admin:
+      const users = await User.find();
+
+      const usersToReturn = users.map(user => {
+        const newUser: UserToReturn = { ...user.toJSON() };
+        delete newUser.password;
+
+        return newUser;
+      });
+
+      return usersToReturn;
+
+    case UserRoles.User:
+      const currUser = await User.findOne(user.id);
+
+      if (!currUser) {
+        throw ApiError.NotFound();
+      }
+
+      const userToReturn: UserToReturn = { ...currUser.toJSON() };
+      delete userToReturn.password;
+
+      return userToReturn;
+  }
 }
