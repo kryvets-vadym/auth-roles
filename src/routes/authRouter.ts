@@ -1,7 +1,7 @@
 import * as authController from '../controllers/authController';
 import { Router } from 'express';
 import { catchErrors } from '../helpers/catchErrors';
-import { authMiddleware } from "../middlewares/authMiddleware";
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 

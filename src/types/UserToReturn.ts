@@ -3,6 +3,7 @@ export interface UserToReturn {
   username: string,
   password?: string,
   role: string,
+  boss: string,
   _id: string,
   createdAt: Date,
   updatedAt: Date,

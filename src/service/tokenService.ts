@@ -1,17 +1,24 @@
 import jwt from 'jsonwebtoken';
 import Token from '../models/Token';
 import { UserToReturn } from '../types/UserToReturn';
+import { ApiError } from "../exceptions/apiError";
 
 export const generateTokens = (payload: UserToReturn) => {
+  const { JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } = process.env;
+
+  if (!JWT_REFRESH_SECRET || !JWT_ACCESS_SECRET) {
+    throw ApiError.NotFound();
+  }
+
   const accessToken = jwt.sign(
     payload,
-    process.env.JWT_ACCESS_SECRET || '',
+    JWT_ACCESS_SECRET,
     { expiresIn: '30m'}
   );
 
   const refreshToken = jwt.sign(
     payload,
-    process.env.JWT_REFRESH_SECRET || '',
+    JWT_REFRESH_SECRET,
     { expiresIn: '30d'}
   );
 

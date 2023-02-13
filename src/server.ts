@@ -16,7 +16,7 @@ const app: Express = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors())
-app.use('/auth', authRouter);
+app.use('/api', authRouter);
 app.use(errorMiddleware);
 
 const start = async () => {

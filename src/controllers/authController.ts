@@ -3,9 +3,6 @@ import * as authService from '../service/authService';
 import { validateRegisterInput } from '../helpers/registerValidation';
 import { ApiError } from '../exceptions/apiError';
 import { RequestWithUser } from '../middlewares/authMiddleware';
-import { UserRoles } from '../types/UserRoles';
-import User from "../models/User";
-import { UserToReturn } from '../types/UserToReturn';
 
 export const registration = async (req: Request, res: Response) => {
   const { isValid, errors } = validateRegisterInput(req.body);

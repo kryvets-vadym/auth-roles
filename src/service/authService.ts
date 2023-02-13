@@ -6,7 +6,6 @@ import * as tokenService from './tokenService';
 import { UserToReturn } from '../types/UserToReturn';
 import { ApiError } from '../exceptions/apiError';
 import { UserRoles } from '../types/UserRoles';
-import { Schema } from 'mongoose';
 
 export const registration = async (
   email: string,
@@ -40,13 +39,20 @@ export const registration = async (
   }
 
   await user.save();
-  await mailService.sendActivationMail(
-    email,
-    `${process.env.API_URL}/auth/activate/${activationLink}`
-  );
+  // await mailService.sendActivationMail(
+  //   email,
+  //   `${process.env.API_URL}/auth/activate/${activationLink}`
+  // );
 
   const userDto: UserToReturn = { ...user.toJSON() };
   delete userDto.password;
+
+  if (boss) {
+    const userBoss: any = await User.findById(boss);
+    userBoss.role = UserRoles.Boss;
+    userBoss.subordinates.push(userDto._id);
+    await userBoss.save();
+  }
 
   const tokens = tokenService.generateTokens(userDto);
 
@@ -122,12 +128,14 @@ export const refresh = async (refreshToken: string) => {
 
 export const getAllUsers = async (user: any) => {
   const { role } = user;
+  const currUser: any = await User.findById(user._id);
+  let usersToReturn;
 
   switch (role) {
     case UserRoles.Admin:
       const users = await User.find();
 
-      const usersToReturn = users.map(user => {
+      usersToReturn = users.map(user => {
         const newUser: UserToReturn = { ...user.toJSON() };
         delete newUser.password;
 
@@ -137,7 +145,6 @@ export const getAllUsers = async (user: any) => {
       return usersToReturn;
 
     case UserRoles.User:
-      const currUser = await User.findOne(user.id);
 
       if (!currUser) {
         throw ApiError.NotFound();
@@ -147,5 +154,21 @@ export const getAllUsers = async (user: any) => {
       delete userToReturn.password;
 
       return userToReturn;
+
+    case UserRoles.Boss:
+      const subordinates = await User.find({
+        boss: currUser.id,
+      });
+
+      usersToReturn = [currUser, ...subordinates];
+
+      const resultUsersList = usersToReturn.map(user => {
+        const newUser: UserToReturn = { ...user.toJSON() };
+        delete newUser.password;
+
+        return newUser;
+      });
+
+      return resultUsersList;
   }
 }
